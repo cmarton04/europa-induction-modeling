@@ -33,7 +33,7 @@ europa-induction-modeling/
  
 # Author
  
-**Chayla Marton** |  
+**Chayla Marton** 
 Astrophysics student | Florida Institute of Technology |
 NASA ICONS Internship, Summer 2026
 GitHub: [@cmarton04](https://github.com/cmarton04)
