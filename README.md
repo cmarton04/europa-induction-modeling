@@ -21,11 +21,11 @@ use it to better characterize Europa's subsurface ocean.
  
 ```
 europa-induction-modeling/
-├── .gitignore
-├── README.md
-├── matlab/             # MATLAB scripts and Live Scripts (.mlx)
 ├── figures/            # Output plots and visualizations
-└── notes/              # Reading notes and reference materials
+├── matlab/             # MATLAB scripts and Live Scripts (.mlx)
+├── notes/              # Reading notes and reference materials
+├── .gitignore           
+└── README.md              
 ```
  
 
