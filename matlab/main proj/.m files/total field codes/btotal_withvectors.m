@@ -1,6 +1,5 @@
-%% visualizing complex B_total(t) 
+%% visualizing btotal(t) with induced mag moment and bprim vectors 
 
-clear
 % define constants
 r_m = 1560; % Europa radius (km)
 A = 0.95; % amplitude response factor
@@ -10,13 +9,14 @@ omega = 2*pi / (synodic_period); % synodic freq. (rad/sec)
 
 % elliptical primary field amplitudes from Zimmer's range (IS-system)
 Bprim_x_amp = 67;  % azimuthal (orbital travel direction)
-Bprim_y_amp = 225; % radial (pointing toward Jupiter)
+Bprim_y_amp = 225;% radial (pointing toward Jupiter)
+Bprim_z_amp = 410;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % create spatial grid
 grid_limit = 4 * r_m; 
-num_points = 35;       
+num_points = 70;       
 [X, Y, Z] = meshgrid(linspace(-grid_limit, grid_limit, num_points), ...
                      linspace(-grid_limit, grid_limit, num_points), ...
                      linspace(-grid_limit, grid_limit, num_points));
@@ -54,11 +54,12 @@ for t = time_steps
     % complex primary background field
     Bprim_c_x = Bprim_x_amp * exp(-1i*omega*t);
     Bprim_c_y = Bprim_y_amp * exp(-1i*(omega*t - pi/2));
+    Bprim_c_z = Bprim_z_amp;
 
     % superimpose total field fields and take real components
     Bx = real(Bsecx_x + Bsecy_x + Bprim_c_x);
     By = real(Bsecx_y + Bsecy_y + Bprim_c_y);
-    Bz = real(Bsecx_z + Bsecy_z);
+    Bz = real(Bsecx_z + Bsecy_z + Bprim_c_z);
 
     % zero interior field matrix
     Bx(~mask) = 0;
@@ -68,25 +69,32 @@ for t = time_steps
     % calculate total field magnitude 
     B_mag = sqrt(Bx.^2 + By.^2 + Bz.^2);
 
-
     % dynamic equator tracking from total primary field directions
     Bx_prim_now = real(Bprim_c_x);
     By_prim_now = real(Bprim_c_y);
+    Bz_prim_now = real(Bprim_c_z);
     
     % find instantaneous alignment vector of the primary driving force
-    m_real = [Bx_prim_now; By_prim_now; 0];
+    m_real = [Bx_prim_now; By_prim_now; Bz_prim_now];
     m_hat = m_real / norm(m_real);
 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
     % seed rings 
-    v1 = cross(m_hat, [0; 0; 1]); 
-    v1 = v1 / norm(v1);           
-    v2 = [0; 0; 1];               
+    v1 = cross(m_hat, [0; 0; 1]);
+    if norm(v1) < 1e-6         
+        v1 = cross(m_hat, [1; 0; 0]);
+    end
+    v1 = v1 / norm(v1);
+    v2 = cross(m_hat, v1);      % guaranteed perpendicular to both m_hat and v1
+    v2 = v2 / norm(v2);
     
     num_seeds_per_ring = 16;
     theta = linspace(0, 2*pi, num_seeds_per_ring);
     
     % shells
-    radii_layers = [1.12, 1.25] * r_m;
+    radii_layers = 1.1 * r_m;
     
     total_seeds = length(radii_layers) * num_seeds_per_ring;
     seed_X = zeros(1, total_seeds);
@@ -104,52 +112,118 @@ for t = time_steps
         end
     end
 
-   
     clf;
-
- 
     set(gcf, 'Color', 'w');
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    % Europa
+    % drawing Europa
     [sx, sy, sz] = sphere(50);
     surf(sx*r_m, sy*r_m, sz*r_m, 'FaceColor', [0.75 0.75 0.75], ...
-         'EdgeColor', 'none', 'FaceAlpha', 1.0);
+         'EdgeColor', 'none', 'FaceAlpha', 0.6);
+
     hold on;
     camlight('headlight'); lighting gouraud;
 
+
+    % plotting magnetic moment vector 
+    % calculate the time varying induced magnetic moment vector
+    mx = A * Bprim_x_amp * cos(omega * t - phi);
+    my = A * Bprim_y_amp * sin(omega * t - phi);
+    mz = 0; 
+    
+    % scale vector
+    moment_norm = norm([mx, my, mz]);
+    if moment_norm > 1e-3
+        scale_factor = (2.0 * r_m) / moment_norm;
+        mx_plot = mx * scale_factor;
+        my_plot = my * scale_factor;
+        mz_plot = mz * scale_factor;
+        
+        % plot magnetic moment vector in red
+        quiver3(0, 0, 0, mx_plot, my_plot, mz_plot, ...
+                'Color', [0.9 0.1 0.1], 'LineWidth', 5, 'MaxHeadSize', 0.5, 'AutoScale', 'off');
+        
+        % label
+        text(mx_plot * 1.15, my_plot * 1.15, mz_plot * 1.15, '$\mathbf{m}_{\mathrm{ind}}$', ...
+             'Color', 'k', 'FontSize', 18, 'Interpreter', 'latex');
+    end
+
+    % plotting B_primary
+    
+    Bx_prim_now = real(Bprim_c_x);
+    By_prim_now = real(Bprim_c_y);
+    Bz_prim_now = real(Bprim_c_z);
+
+    primary_vector = [Bx_prim_now; By_prim_now; Bz_prim_now];
+    primary_norm = norm(primary_vector);
+
+    if primary_norm > 1e-3
+        % scaling
+        scale_factor_prim = (2.0 * r_m) / primary_norm;
+        Bx_prim_plot = Bx_prim_now * scale_factor_prim;
+        By_prim_plot = By_prim_now * scale_factor_prim;
+        Bz_prim_plot = Bz_prim_now * scale_factor_prim;
+
+        start_x = 0;
+        start_y = 0;
+        start_z = 1.1 * r_m; 
+
+        % plot primary field vector in blue
+        quiver3(start_x, start_y, start_z, Bx_prim_plot, By_prim_plot, Bz_prim_plot, ...
+            'Color', [0.1 0.5 0.9], 'LineWidth', 4, 'MaxHeadSize', 0.4, 'AutoScale', 'off');
+
+        % label
+        text(start_x + Bx_prim_plot * 1.15, ...
+            start_y + By_prim_plot * 1.15, ...
+            start_z + Bz_prim_plot * 1.15, ...
+            '$\mathbf{B}_{\mathrm{prim}}$', ...
+            'Color', 'k' , 'FontSize', 18, 'Interpreter', 'latex');
+    end
+
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % streamlines 
     verts_forward = stream3(X, Y, Z, Bx, By, Bz, seed_X(:), seed_Y(:), seed_Z(:));
     verts_backward = stream3(X, Y, Z, -Bx, -By, -Bz, seed_X(:), seed_Y(:), seed_Z(:));
     all_verts = [verts_forward; verts_backward];
 
-    % draw streamlines 
-    for k = 1:numel(all_verts)
-        v = all_verts{k};
-        if isempty(v), continue; end
-
-       
-        % calculate the distance from each vertex along the line to Europa's center
-        dist_from_europa = sqrt(v(:,1).^2 + v(:,2).^2 + v(:,3).^2);
-        min_distance = min(dist_from_europa);
+    % draw streamlines using the surface gradient trick
+    for k = 1:num_seeds_per_ring
+        v_f = verts_forward{k};
+        v_b = verts_backward{k};
         
-        % if the entire line stays further than 1.13 * r_m away, drop it
-        if min_distance > 1.13 * r_m
-            continue; 
+        if isempty(v_f) && isempty(v_b)
+            continue;
+        elseif isempty(v_f)
+            v = v_b;
+        elseif isempty(v_b)
+            v = v_f;
+        else
+            v = [flipud(v_b); v_f];
         end
-        
 
+        % get true field strength values along every point of the continuous path
         line_colors = interp3(X, Y, Z, B_mag, v(:,1), v(:,2), v(:,3));
 
-        patch('XData', v(:,1), 'YData', v(:,2), 'ZData', v(:,3), ...
-              'FaceColor', 'none', 'EdgeColor', 'interp', ...
-              'CData', line_colors, 'LineWidth', 1.4);
-    end
+        % create a 2 row surface grid to get true point by point gradients
+        surf_x = [v(:,1)'; v(:,1)'];
+        surf_y = [v(:,2)'; v(:,2)'];
+        surf_z = [v(:,3)'; v(:,3)'];
+        surf_c = [line_colors'; line_colors'];
 
-    
+        surface(surf_x, surf_y, surf_z, surf_c, ...
+                'FaceColor', 'none', ...
+                'EdgeColor', 'interp', ...
+                'LineWidth', 1.4);
+    end
+  
     colormap(jet);
     c = colorbar;
     ylabel(c, 'total field strength B_{total} (nT)', 'FontWeight', 'bold');
 
-    clim([0, Bprim_y_amp * 1.8]); 
+    clim([300, 555]); 
 
     axis equal; grid on; box on;
     xlim([-grid_limit, grid_limit]);
@@ -157,15 +231,15 @@ for t = time_steps
     zlim([-grid_limit, grid_limit]);
     
     ax = gca;
-    set(ax, 'XColor', 'k', 'YColor', 'k', 'FontSize', 20, 'ZColor', 'k', 'Color', 'w');
+    set(ax, 'XColor', 'k', 'YColor', 'k', 'FontSize', 15, 'ZColor', 'k', 'Color', 'w');
     xlabel('X - azimuthal \phi (km)', 'FontWeight', 'bold');
     ylabel('Y - radial towards Jupiter (km)', 'FontWeight', 'bold');
     zlabel('Z (km)', 'FontWeight', 'bold');
 
-    view([0 90]); 
+    view([120 25]); 
     title(sprintf('total field (B_{primary} + B_{secondary}) at t = %.2f hours', t/3600), ...
           'Color', 'k', 'FontSize', 20 , 'FontWeight', 'bold');
-
+    
     drawnow;
     pause(0.04);
 end
