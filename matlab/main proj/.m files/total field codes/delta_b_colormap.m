@@ -33,6 +33,11 @@ fig = figure('Color', 'w');
 set(gcf, 'Position', [100, 100, 900, 700]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% load and prep image texture
+planetImage = imread('europaimage.jpg');
+shiftAmount = round(size(planetImage,2) * 1); % adjust to hide seam for current view
+shiftedImage = circshift(planetImage, shiftAmount, 2);
+[sx, sy, sz] = sphere(200);
 
 % animation loop 
 for t = time_steps
@@ -118,18 +123,20 @@ for t = time_steps
             idx = idx + 1;
         end
     end
-   
-    clf;
+       clf;
     set(gcf, 'Color', 'w');
     
-    % Europa
-    [sx, sy, sz] = sphere(50);
-    surf(sx*r_m, sy*r_m, sz*r_m, 'FaceColor', [0.75 0.75 0.75], ...
-         'EdgeColor', 'none', 'FaceAlpha', 1.0);
+    % draw solid Europa sphere
 
-
+    h = surf(sx * r_m, sy * r_m, sz * r_m, ...
+        'FaceColor', 'texturemap', ...
+        'CData', flipud(shiftedImage), ...
+        'EdgeColor', 'none', ...
+        'FaceLighting', 'gouraud');
     hold on;
-    camlight('headlight'); lighting gouraud;
+    axis equal;
+
+    set(h, 'FaceLighting', 'gouraud', 'AmbientStrength', 0.4, 'SpecularStrength', 0.1);
 
     verts_forward = stream3(X, Y, Z, Bx, By, Bz, seed_X(:), seed_Y(:), seed_Z(:));
     verts_backward = stream3(X, Y, Z, -Bx, -By, -Bz, seed_X(:), seed_Y(:), seed_Z(:));

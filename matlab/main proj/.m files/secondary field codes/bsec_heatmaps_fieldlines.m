@@ -50,13 +50,12 @@ Y_slice = Y(:,:,z_idx);
 
 
 % fixed seed points
-% ring of seeds around the moon, outside r_m so lines don't start
-% inside the NaN-masked interior
+% ring of seeds around the moon
 
 seed_radius = 1.3 * r_m;
 num_seeds = 24;
 seed_angles = linspace(0, 2*pi, num_seeds + 1);
-seed_angles(end) = []; % avoid duplicate point at 0 == 2pi
+seed_angles(end) = []; % avoid duplicate point at 0 = 2pi
 
 seedX = seed_radius * cos(seed_angles(:));
 seedY = seed_radius * sin(seed_angles(:));

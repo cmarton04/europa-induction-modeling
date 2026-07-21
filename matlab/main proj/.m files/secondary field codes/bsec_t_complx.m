@@ -34,6 +34,11 @@ set(gcf, 'Position', [100, 100, 900, 700]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% load and prep image texture
+planetImage = imread('europaimage.jpg');
+shiftAmount = round(size(planetImage,2) * 0.5); % adjust to hide seam for current view
+shiftedImage = circshift(planetImage, shiftAmount, 2);
+[sx, sy, sz] = sphere(200);
 
 % animation loop 
 for t = time_steps
@@ -100,13 +105,21 @@ for t = time_steps
 
     clf;
     set(gcf, 'Color', 'w');
+
     
     % draw solid Europa sphere
-    [sx, sy, sz] = sphere(50);
-    surf(sx*r_m, sy*r_m, sz*r_m, 'FaceColor', [0.7 0.7 0.7], ...
-         'EdgeColor', 'none', 'FaceAlpha', 1.0);
+
+    h = surf(sx * r_m, sy * r_m, sz * r_m, ...
+        'FaceColor', 'texturemap', ...
+        'CData', flipud(shiftedImage), ...
+        'EdgeColor', 'none', ...
+        'FaceLighting', 'gouraud');
     hold on;
-    camlight('headlight'); lighting gouraud;
+    axis equal;
+
+    set(h, 'FaceLighting', 'gouraud', 'AmbientStrength', 0.4, 'SpecularStrength', 0.1);
+    
+   
 
     % track field magnitude for streamline coloring
     B_mag = sqrt(Bx.^2 + By.^2 + Bz.^2);

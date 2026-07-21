@@ -32,6 +32,11 @@ fig = figure('Color', 'w');
 set(gcf, 'Position', [100, 100, 900, 700]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% load and prep image texture
+planetImage = imread('europaimage.jpg');
+shiftAmount = round(size(planetImage,2) * 1); % adjust to hide seam for current view
+shiftedImage = circshift(planetImage, shiftAmount, 2);
+[sx, sy, sz] = sphere(200);
 
 % animation loop 
 for t = time_steps
@@ -117,13 +122,17 @@ for t = time_steps
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    % drawing Europa
-    [sx, sy, sz] = sphere(50);
-    surf(sx*r_m, sy*r_m, sz*r_m, 'FaceColor', [0.75 0.75 0.75], ...
-         'EdgeColor', 'none', 'FaceAlpha', 0.6);
+    % draw solid Europa sphere
 
+    h = surf(sx * r_m, sy * r_m, sz * r_m, ...
+        'FaceColor', 'texturemap', ...
+        'CData', flipud(shiftedImage), ...
+        'EdgeColor', 'none', ...
+        'FaceLighting', 'gouraud');
     hold on;
-    camlight('headlight'); lighting gouraud;
+    axis equal;
+
+    set(h, 'FaceLighting', 'gouraud', 'AmbientStrength', 0.4, 'SpecularStrength', 0.1);
 
 
     % plotting magnetic moment vector 
