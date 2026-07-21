@@ -1,8 +1,8 @@
 clear; clc; close all;
 %% 
 
-flyby_id = 'E26';   % options: E4, E14, E19, E26, custom_file
-%% 
+flyby_id = 'E4';   % options: E4, E14, E19, E26, custom_file
+%% main loops
 
 % define constants
 r_m = 1560; % Europa radius (km)
@@ -14,7 +14,7 @@ omega = 2*pi / (synodic_period); % synodic freq. (rad/sec)
 % elliptical primary field amplitudes from Zimmer's range (IS-system)
 Bprim_x_amp = 67;  % azimuthal (orbital travel direction)
 Bprim_y_amp = 225; % radial (pointing toward Jupiter)
-Bprim_z_amp = 410;
+Bprim_z_amp = -410;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -39,27 +39,27 @@ switch flyby_id
 
   case 'E4'
         data_file = fullfile('flyby data', 'ORB04_EUR_EPHIO.TAB');
-        [traj_t, traj_pos] = load_galileo_tab(data_file);
-        phi0 = 0.0;                 % <-- set real phase offset once known
+        [traj_t, traj_pos B_meas] = load_galileo_tab(data_file);
+        phi0 = 0.0;                 
         grid_limit = r_m * 7;
  
     case 'E14'
         data_file = fullfile('flyby data', 'ORB14_EUR_EPHIO.TAB');
-        [traj_t, traj_pos] = load_galileo_tab(data_file);
-        phi0 = 0.0;                 % <-- set real phase offset once known
+        [traj_t, traj_pos B_meas] = load_galileo_tab(data_file);
+        phi0 = 0.0;                 
         grid_limit = r_m * 8.5;
         
  
     case 'E19'
         data_file = fullfile('flyby data', 'ORB19_EUR_EPHIO.TAB');
-        [traj_t, traj_pos] = load_galileo_tab(data_file);
-        phi0 = 0.0;                 % <-- set real phase offset once known
+        [traj_t, traj_pos B_meas] = load_galileo_tab(data_file);
+        phi0 = 0.0;                 
         grid_limit = r_m * 6.6;
  
     case 'E26'
         data_file = fullfile('flyby data', 'ORB26_EUR_EPHIO.TAB');
-        [traj_t, traj_pos] = load_galileo_tab(data_file);
-        phi0 = 0.0;                 % <-- set real phase offset once known
+        [traj_t, traj_pos B_meas] = load_galileo_tab(data_file);
+        phi0 = 0.0;                 
         grid_limit = r_m * 13;
  
     case 'custom_file'
@@ -67,12 +67,53 @@ switch flyby_id
         % the E4/E14/E16/E26 cases 
         data_file = fullfile('flyby data', 'galileo_trajectory.tab');   
         [traj_t, traj_pos] = load_galileo_tab(data_file);
-        phi0 = 0.0;                      % <-- set real phase offset once known
-        grid_limit = r_m * 7;            % also figure out best grid limit
+        phi0 = 0.0;                     
+        grid_limit = r_m * 7;            
 
     otherwise
         error('Unknown flyby_id: %s', flyby_id);
 end
+
+% estimate phi0 from far-field points
+
+R_traj = sqrt(sum(traj_pos.^2, 2));
+far_thresh = 3 * r_m; % "far field" = negligible secondary field
+far_idx = find(R_traj > far_thresh & ~any(isnan(B_meas(:,1:2)), 2));
+
+theta_meas = atan2(B_meas(far_idx,2)/Bprim_y_amp, B_meas(far_idx,1)/Bprim_x_amp);
+phi0_est = mod(theta_meas - omega*traj_t(far_idx) + pi, 2*pi) - pi; % wrap to [-pi,pi]
+
+circ_mean = @(x) atan2(mean(sin(x)), mean(cos(x)));
+
+phi0_start = circ_mean(phi0_est(traj_t(far_idx) < traj_t(end)/2));
+phi0_end = circ_mean(phi0_est(traj_t(far_idx) >= traj_t(end)/2));
+
+fprintf('phi0 estimate (start of pass): %.4f rad\n', phi0_start);
+fprintf('phi0 estimate (end of pass): %.4f rad\n', phi0_end);
+fprintf('phi0 estimate (all far pts): %.4f rad\n', circ_mean(phi0_est));
+
+fprintf('N points (start half): %d\n', sum(traj_t(far_idx) < traj_t(end)/2));
+fprintf('N points (end half): %d\n', sum(traj_t(far_idx) >= traj_t(end)/2));
+
+
+
+R_start = R_traj(far_idx(traj_t(far_idx) < traj_t(end)/2));
+R_end = R_traj(far_idx(traj_t(far_idx) >= traj_t(end)/2));
+
+fprintf('R (start half): mean=%.1f km (%.2f r_m), min=%.1f, max=%.1f\n', ...
+ mean(R_start), mean(R_start)/r_m, min(R_start), max(R_start));
+fprintf('R (end half): mean=%.1f km (%.2f r_m), min=%.1f, max=%.1f\n', ...
+ mean(R_end), mean(R_end)/r_m, min(R_end), max(R_end));
+
+% weight far-field phi0 estimates by distance (further = more trustworthy)
+weights = R_traj(far_idx) - far_thresh; % more weight to points further beyond cutoff
+sin_avg = sum(weights .* sin(phi0_est)) / sum(weights);
+cos_avg = sum(weights .* cos(phi0_est)) / sum(weights);
+phi0 = atan2(sin_avg, cos_avg);
+fprintf('phi0 estimate (distance-weighted): %.4f rad\n', phi0);
+
+[~, i_min] = min(R_traj);
+t_CA = traj_t(i_min) / 60; % in minutes
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -91,8 +132,10 @@ mask = R >= r_m;
 num_frames = min(120, length(traj_t));
 frame_idx = round(linspace(1, length(traj_t), num_frames));
 
+
 % storage for the actual sampled B values along the trajectory 
 t_series = traj_t(frame_idx);
+Bmeas_series = B_meas(frame_idx, :); 
 Bx_series = zeros(size(frame_idx));
 By_series = zeros(size(frame_idx));
 Bz_series = zeros(size(frame_idx));
@@ -102,6 +145,12 @@ fig = figure('Color', 'w');
 set(gcf, 'Position', [100, 100, 900, 700]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% load and prep image texture
+planetImage = imread('europaimage.jpg');
+shiftAmount = round(size(planetImage,2) * 1); % adjust to hide seam for current view
+shiftedImage = circshift(planetImage, shiftAmount, 2);
+[sx, sy, sz] = sphere(200);
 
 
 % animation loop, one frame per sampled trajectory point
@@ -221,13 +270,17 @@ for fi = 1:length(frame_idx)
     clf;
     set(gcf, 'Color', 'w');
 
-    % Europa
-    [sx, sy, sz] = sphere(50);
-    surf(sx*r_m, sy*r_m, sz*r_m, 'FaceColor', [0.75 0.75 0.75], ...
-         'EdgeColor', 'none', 'FaceAlpha', 1.0);
+    % draw solid Europa sphere
 
+    h = surf(sx * r_m, sy * r_m, sz * r_m, ...
+        'FaceColor', 'texturemap', ...
+        'CData', flipud(shiftedImage), ...
+        'EdgeColor', 'none', ...
+        'FaceLighting', 'gouraud');
     hold on;
-    camlight('headlight'); lighting gouraud;
+    axis equal;
+
+    set(h, 'FaceLighting', 'gouraud', 'AmbientStrength', 0.4, 'SpecularStrength', 0.1);
 
     verts_forward = stream3(X, Y, Z, Bx, By, Bz, seed_X(:), seed_Y(:), seed_Z(:));
     verts_backward = stream3(X, Y, Z, -Bx, -By, -Bz, seed_X(:), seed_Y(:), seed_Z(:));
@@ -267,10 +320,13 @@ for fi = 1:length(frame_idx)
 
     Bsc_norm = norm([Bx_sc, By_sc, Bz_sc]);
     if Bsc_norm > 1e-3
-        arrow_scale = (1.2 * r_m) / Bsc_norm;
+        arrow_scale = (2.2 * r_m) / Bsc_norm;
         quiver3(sc_pos(1), sc_pos(2), sc_pos(3), ...
                 Bx_sc*arrow_scale, By_sc*arrow_scale, Bz_sc*arrow_scale, ...
                 'Color', [0 0.6 0.2], 'LineWidth', 3, 'MaxHeadSize', 0.6, 'AutoScale', 'off');
+        tip = sc_pos + [Bx_sc, By_sc, Bz_sc] * arrow_scale;
+        text(tip(1), tip(2), tip(3), sprintf('  %.1f nT', Bsc_norm), ...
+            'Color', [0 0.5 0.15], 'FontWeight', 'bold', 'FontSize', 11);
     end
 
     colormap(jet);
@@ -291,37 +347,57 @@ for fi = 1:length(frame_idx)
     zlabel('Z (km)', 'FontWeight', 'bold');
 
     view([120 25]);
-    title(sprintf('%s flyby: total field + local spacecraft B, t = %.2f min', ...
-          strrep(flyby_id, '_', '\_'), t/60), ...
-          'Color', 'k', 'FontSize', 16, 'FontWeight', 'bold');
+
+    title(sprintf('%s flyby: total field + local spacecraft, t = %.2f min | |B|_{s/c} = %.1f nT', ...
+        strrep(flyby_id, '_', '\_'), t/60, Bsc_norm), ...
+        'Color', 'k', 'FontSize', 16, 'FontWeight', 'bold');
 
     drawnow;
     pause(0.04);
 end
-%% 
+%% stackplots
 
 figure('Color', 'w', 'Position', [150, 150, 800, 600]);
  
 subplot(4,1,1);
-plot(t_series/60, Bx_series, 'r-', 'LineWidth', 1.5);
+h1 = plot(t_series/60, Bmeas_series(:,1), 'Color', [0.5 0.5 0.5], 'LineWidth', 1.2); hold on;
+h2 = plot(t_series/60, Bx_series, 'r-', 'LineWidth', 1.5);
 ylabel('B_x (nT)', 'Color', 'k'); grid on;
+xline(t_CA, 'k:', 'CA', 'LineWidth', 1);
 title(sprintf('%s: field along trajectory', flyby_id), 'Interpreter', 'none', 'Color', 'k');
 set(gca, 'Color', 'w', 'XColor', 'k', 'YColor', 'k', 'GridColor', 'k', 'GridAlpha', 0.3, 'FontSize', 11);
  
 subplot(4,1,2);
+plot(t_series/60, Bmeas_series(:,2), 'Color', [0.5 0.5 0.5], 'LineWidth', 1.2); hold on;
 plot(t_series/60, By_series, 'g-', 'LineWidth', 1.5);
 ylabel('B_y (nT)', 'Color', 'k'); grid on;
+xline(t_CA, 'k:', 'CA', 'LineWidth', 1);
 set(gca, 'Color', 'w', 'XColor', 'k', 'YColor', 'k', 'GridColor', 'k', 'GridAlpha', 0.3, 'FontSize', 11);
  
 subplot(4,1,3);
+plot(t_series/60, Bmeas_series(:,3), 'Color', [0.5 0.5 0.5], 'LineWidth', 1.2); hold on;
 plot(t_series/60, Bz_series, 'b-', 'LineWidth', 1.5);
 ylabel('B_z (nT)', 'Color', 'k'); grid on;
+xline(t_CA, 'k:', 'CA', 'LineWidth', 1);
 set(gca, 'Color', 'w', 'XColor', 'k', 'YColor', 'k', 'GridColor', 'k', 'GridAlpha', 0.3, 'FontSize', 11);
  
 subplot(4,1,4);
+plot(t_series/60, Bmeas_series(:,4), 'Color', [0.5 0.5 0.5], 'LineWidth', 1.2); hold on;
 plot(t_series/60, Bmag_series, 'k-', 'LineWidth', 1.5);
 ylabel('|B| (nT)', 'Color', 'k'); xlabel('time since encounter start (min)', 'Color', 'k'); grid on;
+xline(t_CA, 'k:', 'CA', 'LineWidth', 1);
 set(gca, 'Color', 'w', 'XColor', 'k', 'YColor', 'k', 'GridColor', 'k', 'GridAlpha', 0.3, 'FontSize', 11);
+
+lgd = legend([h1 h2], {'measured', 'model'}, 'Orientation', 'horizontal', 'TextColor', 'k');
+lgd.Position = [0.4, 0.96, 0.2, 0.03];   
+lgd.Box = 'off';
+
+xlims = [0, max(traj_t)/60];   % full measured time range, in minutes
+
+subplot(4,1,1); xlim(xlims);
+subplot(4,1,2); xlim(xlims);
+subplot(4,1,3); xlim(xlims);
+subplot(4,1,4); xlim(xlims);
  
 % print raw numbers
 fprintf('\n%-10s %-10s %-10s %-10s %-10s\n', 't (min)', 'Bx', 'By', 'Bz', '|B|');
@@ -331,14 +407,13 @@ for fi = 1:5:length(t_series)
 end
 
 
-%% 
-% 
+%% functions
 
 
 % local functions
 
 function [traj_t, traj_pos, B_meas] = load_galileo_tab(filename)
-% loads a PDS Galileo mag+trajectory .tab file in ephio coordinates.
+% loads a PDS Galileo mag+trajectory .tab file in ephio coordinates
 % from lbl file, columns are:
 %   1   : spacecraft event time, ISO 8601
 %   2-4 : BX, BY, BZ measured magnetic field (nT)  -- missing = 999999.99
