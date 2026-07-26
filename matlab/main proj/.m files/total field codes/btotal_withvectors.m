@@ -10,7 +10,7 @@ omega = 2*pi / (synodic_period); % synodic freq. (rad/sec)
 % elliptical primary field amplitudes from Zimmer's range (IS-system)
 Bprim_x_amp = 67;  % azimuthal (orbital travel direction)
 Bprim_y_amp = 225;% radial (pointing toward Jupiter)
-Bprim_z_amp = 410;
+Bprim_z_amp = -410;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
