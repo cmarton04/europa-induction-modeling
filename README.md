@@ -83,7 +83,8 @@ europa-induction-modeling/
 ├── notes/                                                 ← Reference materials
 │   ├── Analytical equations for bsec & bprim.pdf          ← Shows the derivation for the real secondary and primary equations
 │   └── Gyromotion exercise (analytical).pdf               ← Practice exercise derivation
-├── .gitignore           
+├── .gitignore
+├── LICENSE
 └── README.md    
 ```
  
