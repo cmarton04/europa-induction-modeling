@@ -1,6 +1,6 @@
 # europa-induction-modeling
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23606184.svg)](https://doi.org/10.5281/zenodo.23606184)
 
 Modeling Europa's time-dependent magnetic induction response and subsurface ocean characterization — NASA ICONS Internship 2026
 
@@ -142,7 +142,7 @@ Callisto: Constraints from Galileo magnetometer observations. *Icarus*, 147, 329
 If you use this code, please cite it using `CITATION.cff`, or:
 
 > Marton, C. (2026). *Europa Induction Modeling* (v1.0.0) [Software].
-> Zenodo. https://doi.org/10.5281/zenodo.XXXXXXX
+> Zenodo. https://doi.org/10.5281/zenodo.23606184
 
 # License
 
