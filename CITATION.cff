@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Europa Induction Modeling"
+version: 1.0.0
+date-released: 2026-10-23
+license: MIT
+repository-code: "https://github.com/cmarton04/europa-induction-modeling"
+authors:
+  - family-names: "Marton"
+    given-names: "Chayla"
+    orcid: "https://orcid.org/0009-0005-0651-5624"
+    affiliation: "Florida Institute of Technology"
