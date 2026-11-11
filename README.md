@@ -88,24 +88,24 @@ europa-induction-modeling/
 │   ├── main proj/
 │   │   ├── flyby figures/                        ← Model outputs for Galileo flybys E4, E14, E19, E26
 │   │   │   ├── E4/ E14/ E19/ E26/                ← One folder per flyby, each containing:
-│   │   │   │     <flyby>_field_graphs.png        Stackplot of measured field with model prediction overlaid
-│   │   │   │     <flyby>_flyby_geometry.mp4      Flyby trajectory through Europa's magnetic environment
-│   │   │   │     <flyby>_residuals.png           Residuals (model − measured)
-│   │   │   │     <flyby>_parameter_test.png      Model under 3 extreme parameter sets, measured in grey
-│   │   │   │     <flyby>_parameter_error.png     Error under the 3 extreme parameter sets
-│   │   │   └── parameter_testing_legend.png      The three extreme scenarios (legend)
+│   │   │   │     <flyby>_field_graphs.png        ← Stackplot of measured field with model prediction overlaid
+│   │   │   │     <flyby>_flyby_geometry.mp4      ← Flyby trajectory through Europa's magnetic environment
+│   │   │   │     <flyby>_residuals.png           ← Residuals (model − measured)
+│   │   │   │     <flyby>_parameter_test.png      ← Model under 3 extreme parameter sets, measured in grey
+│   │   │   │     <flyby>_parameter_error.png     ← Error under the 3 extreme parameter sets
+│   │   │   └── parameter_testing_legend.png      ← The three extreme scenarios (legend)
 │   │   ├── old figures/                          ← Figures from earlier stages before final output
 │   │   ├── secondary field figures/              ← Europa's secondary (induced) field
-│   │   │   ├── bsec_heatmaps.mp4                 Equatorial-plane heatmaps over time
-│   │   │   ├── bsec_heatmaps_fieldlines.mp4      Same, with field lines
-│   │   │   ├── bsec_t0_2d.png                    Snapshot of secondary field lines
-│   │   │   ├── bsec_t_complx.mp4                 Over time (complex B_sec equation)
-│   │   │   └── bsec_t_real.mp4                   Over time (real B_sec equation, see notes)
+│   │   │   ├── bsec_heatmaps.mp4                 ← Equatorial-plane heatmaps over time
+│   │   │   ├── bsec_heatmaps_fieldlines.mp4      ← Same, with field lines
+│   │   │   ├── bsec_t0_2d.png                    ← Snapshot of secondary field lines
+│   │   │   ├── bsec_t_complx.mp4                 ← Over time (complex B_sec equation)
+│   │   │   └── bsec_t_real.mp4                   ← Over time (real B_sec equation, see notes)
 │   │   └── total field figures/                  ← Total field = Jupiter's primary + secondary
-│   │       ├── btotal_t_colormap.mp4             Streamlines colored by field strength
-│   │       ├── btotal_withvectors.mp4            Plus induced moment & B_prim vectors
-│   │       ├── by_vs_bx_param.png                Parametric curve of B_y vs B_x
-│   │       └── delta_b_colormap.mp4              Streamlines colored by induced deviation
+│   │       ├── btotal_t_colormap.mp4             ← Streamlines colored by field strength
+│   │       ├── btotal_withvectors.mp4            ← Plus induced moment & B_prim vectors
+│   │       ├── by_vs_bx_param.png                ← Parametric curve of B_y vs B_x
+│   │       └── delta_b_colormap.mp4              ← Streamlines colored by induced deviation
 │   └── practice codes/                           ← Figures from preparation exercises
 ├── matlab/                                       ← MATLAB scripts and Live Scripts (.mlx)
 │   ├── main proj/
@@ -117,8 +117,8 @@ europa-induction-modeling/
 │   │   └── europaimage.jpg                       ← Europa surface texture for visualizations
 │   └── practice codes/                           ← Preparation exercise code
 ├── notes/                                        ← Reference materials
-│   ├── Analytical equations for bsec & bprim.pdf   Derivation of the real primary & secondary equations
-│   └── Gyromotion exercise (analytical).pdf        Practice exercise derivation
+│   ├── Analytical equations for bsec & bprim.pdf ← Derivation of the real primary & secondary equations
+│   └── Gyromotion exercise (analytical).pdf      ← Practice exercise derivation
 ├── .gitignore
 ├── CITATION.cff
 ├── LICENSE
